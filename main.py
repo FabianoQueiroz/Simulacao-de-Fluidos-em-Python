@@ -40,20 +40,18 @@ class Cell:
         self._tipo = novo_tipo
         if novo_tipo == TipoCelula.SOLIDO:
             self.cor = pyr.WHITE
-            self.fill_level = 1.0
         elif novo_tipo == TipoCelula.LIQUIDO:
             self.cor = pyr.BLUE
-            self.fill_level = 0.5
         else:
             self.cor = COR_BACKGROUND
 
     def __repr__(self):
-        return f"Célula(x={self.x}, y={self.y}, tipo={self.tipo}, cor={self.cor}, fill level={self.fill_level})"
+        return f"Célula({self.x=}, {self.y=}, {self.tipo=}, {self.cor=}, {self.fill_level=})"
 
 
 GRID_CELULAS = [
-    [Cell(x=i * CELL_SIZE, y=j * CELL_SIZE) for j in range(ROWS)]
-    for i in range(COLUMNS)
+    [Cell(x=i * CELL_SIZE, y=j * CELL_SIZE) for j in range(ROWS + 1)]
+    for i in range(COLUMNS + 1)
 ]
 
 
@@ -78,65 +76,32 @@ def get_vizinhos(cell: Cell):
 def fluxo_de_liquidos(cell: Cell):
     vizinhos = get_vizinhos(cell)
 
-    if cell.fill_level != 1.0 and (
-        cell.tipo == TipoCelula.LIQUIDO or cell.tipo == TipoCelula.VAZIO
-    ):
-        qtde_vazio = 1.0 - cell.fill_level
-        nivel_atual = cell.fill_level
+    if cell.fill_level < 1.0:
+        espaco_celula = 1.0 - cell.fill_level
 
-        # Vizinho Acima
         if "U" in vizinhos.keys():
-            if (
-                nivel_atual < 1.0
-                and GRID_CELULAS[vizinhos["U"][0]][vizinhos["U"][1]].tipo
-                != TipoCelula.SOLIDO
-            ):
-                novo_nivel = nivel_atual + min(
-                    GRID_CELULAS[vizinhos["U"][0]][vizinhos["U"][1]].fill_level,
-                    qtde_vazio,
-                )
+            vizinho = GRID_CELULAS[vizinhos["U"][0]][vizinhos["U"][1]]
+            if vizinho.tipo == TipoCelula.LIQUIDO and vizinho.fill_level > 0.0:
+                transfer = min(espaco_celula, vizinho.fill_level)
 
-                GRID_CELULAS[vizinhos["U"][0]][vizinhos["U"][1]].fill_level = max(
-                    0.0,
-                    GRID_CELULAS[vizinhos["U"][0]][vizinhos["U"][1]].fill_level
-                    - qtde_vazio,
-                )
+                vizinho.fill_level = vizinho.fill_level - transfer
+                cell.fill_level = cell.fill_level + transfer
 
-                cell.fill_level = novo_nivel
+            elif "L" in vizinhos.keys():
+                vizinho = GRID_CELULAS[vizinhos["L"][0]][vizinhos["L"][1]]
+                if vizinho.tipo == TipoCelula.LIQUIDO and vizinho.fill_level > 0.0:
+                    transfer = (cell.fill_level + vizinho.fill_level) / 2
 
-        # Vizinho a Direita
-        if "R" in vizinhos.keys():
-            if (
-                GRID_CELULAS[vizinhos["R"][0]][vizinhos["R"][1]].fill_level
-                > nivel_atual
-                and GRID_CELULAS[vizinhos["R"][0]][vizinhos["R"][1]].tipo
-                != TipoCelula.SOLIDO
-            ):
-                novo_nivel = (
-                    GRID_CELULAS[vizinhos["R"][0]][vizinhos["R"][1]].fill_level
-                    + nivel_atual
-                ) / 2
-                GRID_CELULAS[vizinhos["R"][0]][vizinhos["R"][1]].fill_level = novo_nivel
-                cell.fill_level = novo_nivel
+                    vizinho.fill_level = transfer
+                    cell.fill_level = transfer
 
-        # Vizinho a Esquerda
-        if "L" in vizinhos.keys():
-            if (
-                GRID_CELULAS[vizinhos["L"][0]][vizinhos["L"][1]].fill_level
-                > nivel_atual
-                and GRID_CELULAS[vizinhos["L"][0]][vizinhos["L"][1]].tipo
-                != TipoCelula.SOLIDO
-            ):
-                novo_nivel = (
-                    GRID_CELULAS[vizinhos["L"][0]][vizinhos["L"][1]].fill_level
-                    + nivel_atual
-                ) / 2
-                GRID_CELULAS[vizinhos["L"][0]][vizinhos["L"][1]].fill_level = novo_nivel
-                cell.fill_level = novo_nivel
+                elif "R" in vizinhos.keys():
+                    vizinho = GRID_CELULAS[vizinhos["R"][0]][vizinhos["R"][1]]
+                    if vizinho.tipo == TipoCelula.LIQUIDO and vizinho.fill_level > 0.0:
+                        transfer = (cell.fill_level + vizinho.fill_level) / 2
 
-        # Atualiza o tipo da célula caso tenha recebido liquido
-        if cell.fill_level > 0:
-            cell.tipo = TipoCelula.LIQUIDO
+                        vizinho.fill_level = transfer
+                        cell.fill_level = transfer
 
     return None
 
@@ -165,20 +130,38 @@ def main():
         ):
             if pyr.is_mouse_button_down(pyr.MouseButton.MOUSE_BUTTON_LEFT):
                 GRID_CELULAS[x_cell_mouse][y_cell_mouse].tipo = TipoCelula.SOLIDO
-            if pyr.is_mouse_button_down(pyr.MouseButton.MOUSE_BUTTON_RIGHT):
-                GRID_CELULAS[x_cell_mouse][y_cell_mouse].tipo = TipoCelula.VAZIO
             if pyr.is_mouse_button_down(pyr.MouseButton.MOUSE_BUTTON_MIDDLE):
+                GRID_CELULAS[x_cell_mouse][y_cell_mouse].tipo = TipoCelula.VAZIO
+                GRID_CELULAS[x_cell_mouse][y_cell_mouse].fill_level = 0.0
+            if (
+                pyr.is_mouse_button_down(pyr.MouseButton.MOUSE_BUTTON_RIGHT)
+                and GRID_CELULAS[x_cell_mouse][y_cell_mouse].tipo != TipoCelula.SOLIDO
+            ):
                 GRID_CELULAS[x_cell_mouse][y_cell_mouse].tipo = TipoCelula.LIQUIDO
+                GRID_CELULAS[x_cell_mouse][y_cell_mouse].fill_level = 1.0
+
+        print(
+            GRID_CELULAS[x_cell_mouse][y_cell_mouse].tipo,
+            GRID_CELULAS[x_cell_mouse][y_cell_mouse].fill_level,
+        )
 
         for row in GRID_CELULAS:
             for cell in row:
                 fluxo_de_liquidos(cell)
+
+                # Atualiza o tipo da célula após o fluxo
+                if cell.tipo != TipoCelula.SOLIDO:
+                    if cell.fill_level >= 0.0001:
+                        cell.tipo = TipoCelula.LIQUIDO
+                    if cell.fill_level < 0.0001:
+                        cell.tipo = TipoCelula.VAZIO
+
                 if cell.tipo == TipoCelula.LIQUIDO:
                     pyr.draw_rectangle(
                         cell.x,
-                        cell.y + floor(CELL_SIZE * cell.fill_level),
+                        cell.y + int(CELL_SIZE * round(1 - cell.fill_level, 2)),
                         CELL_SIZE - 1,
-                        floor(CELL_SIZE * (1 - cell.fill_level)),
+                        CELL_SIZE - int(CELL_SIZE * round(1 - cell.fill_level, 2)),
                         cell.cor,
                     )
                 else:
