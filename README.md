@@ -12,7 +12,8 @@ Baseado nos videos do canal do Youtube [HirschDaniel](https://www.youtube.com/@H
 
 ### Como usar:
 
- - Mouse: 
+ - Mouse:
+   
     -**Botão Esquerdo:** Coloca Blocos
    
     -**Botão Direito:** Coloca Líquidos
