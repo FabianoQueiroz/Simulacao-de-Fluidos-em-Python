@@ -14,5 +14,7 @@ Baseado nos videos do canal do Youtube [HirschDaniel](https://www.youtube.com/@H
 
  - Mouse: 
     -**Botão Esquerdo:** Coloca Blocos
+   
     -**Botão Direito:** Coloca Líquidos
+   
     -**Botão do Meio:** Apaga
